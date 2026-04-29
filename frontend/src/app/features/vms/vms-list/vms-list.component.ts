@@ -3,10 +3,11 @@ import { CommonModule, NgClass } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { VmService } from '../../../core/services/vm.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -18,8 +19,7 @@ import { Vm, VmStatus, VmsQuery } from '../../../core/models/vm.model';
 @Component({
   selector: 'app-vms-list',
   standalone: true,
-  imports: [CommonModule, NgClass, RouterLink, FormsModule, ButtonModule, InputTextModule, SelectModule, TooltipModule, ConfirmDialogModule, StatusBadgeComponent, SkeletonComponent],
-  providers: [ConfirmationService],
+  imports: [CommonModule, NgClass, RouterLink, FormsModule, ButtonModule, CardModule, InputTextModule, SelectModule, TooltipModule, ConfirmDialog, StatusBadgeComponent, SkeletonComponent],
   templateUrl: './vms-list.component.html',
 })
 export class VmsListComponent implements OnInit {
@@ -79,14 +79,21 @@ export class VmsListComponent implements OnInit {
     });
   }
 
-  deleteVm(vm: Vm) {
+  deleteVm(event: Event, vm: Vm) {
     this.confirm.confirm({
+      target: event.target as EventTarget,
       message: `¿Eliminar "${vm.name}"? Esta acción no se puede deshacer.`,
       header: 'Confirmar eliminación',
-      icon: 'pi pi-trash',
-      acceptLabel: 'Eliminar',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
+      icon: 'pi pi-exclamation-triangle',
+      rejectButtonProps: {
+        label: 'Cancelar',
+        severity: 'secondary',
+        outlined: true,
+      },
+      acceptButtonProps: {
+        label: 'Eliminar',
+        severity: 'danger',
+      },
       accept: () => {
         this.vmService.deleteVm(vm.id).subscribe({
           next: () => this.toast.success('VM eliminada', vm.name),

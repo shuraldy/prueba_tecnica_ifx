@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
@@ -25,21 +25,52 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly vmService = inject(VmService);
   private readonly toast = inject(ToastService);
 
+  readonly sidebarOpen = signal(false);
+  readonly sidebarCollapsed = signal(false);
+
+  @HostListener('document:keydown.escape')
+  closeSidebar() { this.sidebarOpen.set(false); }
+
+  toggleSidebar() { this.sidebarOpen.update(v => !v); }
+  toggleCollapsed() { this.sidebarCollapsed.update(v => !v); }
+
   ngOnInit() {
     this.socket.connect();
 
     this.socket.onVmCreated().subscribe(vm => {
       this.vmService.applySocketUpdate(vm);
-      this.toast.info('VM creada', `"${vm.name}" fue agregada`);
+      if (!this.auth.isAdmin()) {
+        this.toast.info('Nueva VM disponible', `"${vm.name}" fue agregada`);
+      }
     });
 
     this.socket.onVmUpdated().subscribe(vm => {
+      const prev = this.vmService.vms().find(v => v.id === vm.id);
       this.vmService.applySocketUpdate(vm);
+      if (!this.auth.isAdmin()) {
+        const changes: string[] = [];
+        if (prev) {
+          if (prev.name   !== vm.name)   changes.push(`Nombre: ${vm.name}`);
+          if (prev.os     !== vm.os)     changes.push(`OS: ${vm.os}`);
+          if (prev.cores  !== vm.cores)  changes.push(`vCPU: ${vm.cores}`);
+          if (prev.ram    !== vm.ram)    changes.push(`RAM: ${vm.ram} MB`);
+          if (prev.disk   !== vm.disk)   changes.push(`Disco: ${vm.disk} GB`);
+          if (prev.status !== vm.status) changes.push(`Estado: ${vm.status}`);
+        }
+        const detail = changes.length ? changes.join(' · ') : 'Datos actualizados';
+        this.toast.info(`"${vm.name}" actualizada`, detail);
+      }
     });
 
     this.socket.onVmDeleted().subscribe(id => {
       this.vmService.applySocketDelete(id);
-      this.toast.info('VM eliminada', 'Una VM fue eliminada');
+      if (!this.auth.isAdmin()) {
+        this.toast.warn('VM eliminada', 'Una máquina virtual fue eliminada');
+      }
+    });
+
+    this.socket.onVmStats().subscribe(stats => {
+      this.vmService.applySocketStats(stats);
     });
   }
 

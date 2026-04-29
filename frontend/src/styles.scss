@@ -126,9 +126,9 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
   .badge-off {
-    background-color: color-mix(in srgb, #64748b 15%, transparent);
-    color: var(--text-muted);
-    border: 1px solid color-mix(in srgb, #64748b 30%, transparent);
+    background-color: color-mix(in srgb, #ef4444 12%, transparent);
+    color: #ef4444;
+    border: 1px solid color-mix(in srgb, #ef4444 25%, transparent);
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
   .badge-suspended {

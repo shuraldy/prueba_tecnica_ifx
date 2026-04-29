@@ -6,6 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Vm } from '../../domain/entities/vm.entity';
+import { VmStats } from '../../domain/repositories/vm.repository.abstract';
 
 @WebSocketGateway({
   cors: {
@@ -34,6 +35,10 @@ export class VmsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   emitVmDeleted(id: string) {
-    this.server.emit('vm:deleted', { id });
+    this.server.emit('vm:deleted', id);
+  }
+
+  emitVmStats(stats: VmStats) {
+    this.server.emit('vm:stats', stats);
   }
 }

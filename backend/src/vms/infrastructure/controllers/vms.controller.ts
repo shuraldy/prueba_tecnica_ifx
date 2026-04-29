@@ -70,6 +70,8 @@ export class VmsController {
   async create(@Body() dto: CreateVmDto) {
     const vm = await this.createVmUseCase.execute(dto);
     this.vmsGateway.emitVmCreated(vm);
+    const stats = await this.getVmStatsUseCase.execute();
+    this.vmsGateway.emitVmStats(stats);
     return vm;
   }
 
@@ -80,6 +82,8 @@ export class VmsController {
   async update(@Param('id') id: string, @Body() dto: UpdateVmDto) {
     const vm = await this.updateVmUseCase.execute(id, dto);
     this.vmsGateway.emitVmUpdated(vm);
+    const stats = await this.getVmStatsUseCase.execute();
+    this.vmsGateway.emitVmStats(stats);
     return vm;
   }
 
@@ -90,6 +94,8 @@ export class VmsController {
   async updateStatus(@Param('id') id: string, @Body() dto: UpdateVmStatusDto) {
     const vm = await this.updateVmStatusUseCase.execute(id, dto.status);
     this.vmsGateway.emitVmUpdated(vm);
+    const stats = await this.getVmStatsUseCase.execute();
+    this.vmsGateway.emitVmStats(stats);
     return vm;
   }
 
@@ -101,5 +107,7 @@ export class VmsController {
   async remove(@Param('id') id: string) {
     await this.deleteVmUseCase.execute(id);
     this.vmsGateway.emitVmDeleted(id);
+    const stats = await this.getVmStatsUseCase.execute();
+    this.vmsGateway.emitVmStats(stats);
   }
 }

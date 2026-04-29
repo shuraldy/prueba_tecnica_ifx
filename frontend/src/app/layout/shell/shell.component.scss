@@ -12,3 +12,11 @@
   color: var(--sidebar-active-text) !important;
   border-color: color-mix(in srgb, var(--brand) 30%, transparent) !important;
 }
+
+/* Sidebar always visible on lg+, drawer on mobile */
+.sidebar {
+  @media (max-width: 1023px) {
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    width: 16rem; /* override collapsed class on mobile */
+  }
+}

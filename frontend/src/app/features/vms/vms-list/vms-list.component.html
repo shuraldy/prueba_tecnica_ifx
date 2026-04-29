@@ -32,7 +32,7 @@
   <div class="flex flex-col items-center justify-center py-24 text-center">
     <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
          style="background-color: var(--bg-elevated)">
-      <i class="pi pi-desktop text-2xl" style="color: var(--text-muted)"></i>
+      <i class="pi pi-server text-2xl" style="color: var(--text-muted)"></i>
     </div>
     <h3 class="font-semibold mb-1" style="color: var(--text-primary)">No hay VMs</h3>
     <p class="text-sm mb-4" style="color: var(--text-secondary)">
@@ -49,60 +49,80 @@
   <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
     @for (vm of vmService.vms(); track trackById($index, vm)) {
 
-      <div class="card card-hover rounded-xl p-5 transition-all duration-300 cursor-default"
-           [ngClass]="updatedVmId() === vm.id ? 'ring-2 ring-indigo-500/60 shadow-lg' : ''">
+      <p-card [ngClass]="updatedVmId() === vm.id ? 'ring-2 ring-indigo-500/60 shadow-xl transition-all duration-300' : 'transition-all duration-300'">
 
-        <!-- Card header -->
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                 style="background-color: var(--brand-subtle)">
-              <i class="pi pi-desktop text-xs" style="color: var(--brand-text)"></i>
+        <!-- Header slot -->
+        <ng-template pTemplate="header">
+          <div class="flex items-center justify-between px-5 pt-5">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                   style="background-color: var(--brand-subtle)">
+                <i class="pi pi-server text-sm" style="color: var(--brand-text)"></i>
+              </div>
+              <span class="font-semibold text-sm truncate" style="color: var(--text-primary)">
+                {{ vm.name }}
+              </span>
             </div>
-            <h3 class="font-semibold truncate text-sm" style="color: var(--text-primary)">{{ vm.name }}</h3>
+            <app-status-badge [status]="vm.status" />
           </div>
-          <app-status-badge [status]="vm.status" />
+        </ng-template>
+
+        <!-- Body -->
+        <div class="flex flex-col gap-4">
+
+          <!-- OS -->
+          <p class="text-xs -mt-2" style="color: var(--text-muted)">{{ vm.os }}</p>
+
+          <!-- Specs -->
+          <div class="grid grid-cols-3 gap-2">
+
+            <div class="flex flex-col items-center gap-1 rounded-lg py-3"
+                 style="background-color: var(--bg-elevated)">
+              <i class="pi pi-desktop text-base" style="color: var(--brand)"></i>
+              <p class="text-xs" style="color: var(--text-muted)">vCPU</p>
+              <p class="text-sm font-bold" style="color: var(--text-primary)">{{ vm.cores }}</p>
+            </div>
+
+            <div class="flex flex-col items-center gap-1 rounded-lg py-3"
+                 style="background-color: var(--bg-elevated)">
+              <i class="pi pi-microchip text-base" style="color: #8b5cf6"></i>
+              <p class="text-xs" style="color: var(--text-muted)">RAM</p>
+              <p class="text-sm font-bold" style="color: var(--text-primary)">
+                {{ vm.ram >= 1024 ? (vm.ram / 1024 | number:'1.0-1') + 'G' : vm.ram + 'M' }}
+              </p>
+            </div>
+
+            <div class="flex flex-col items-center gap-1 rounded-lg py-3"
+                 style="background-color: var(--bg-elevated)">
+              <i class="pi pi-database text-base" style="color: #ec4899"></i>
+              <p class="text-xs" style="color: var(--text-muted)">Disco</p>
+              <p class="text-sm font-bold" style="color: var(--text-primary)">{{ vm.disk }}G</p>
+            </div>
+
+          </div>
         </div>
 
-        <!-- OS -->
-        <p class="text-xs mb-4" style="color: var(--text-muted)">{{ vm.os }}</p>
-
-        <!-- Specs -->
-        <div class="grid grid-cols-3 gap-2 mb-4">
-          <div class="rounded-lg p-2 text-center" style="background-color: var(--bg-elevated)">
-            <p class="text-xs mb-0.5" style="color: var(--text-muted)">vCPU</p>
-            <p class="text-sm font-bold" style="color: var(--text-primary)">{{ vm.cores }}</p>
-          </div>
-          <div class="rounded-lg p-2 text-center" style="background-color: var(--bg-elevated)">
-            <p class="text-xs mb-0.5" style="color: var(--text-muted)">RAM</p>
-            <p class="text-sm font-bold" style="color: var(--text-primary)">
-              {{ vm.ram >= 1024 ? (vm.ram / 1024 | number:'1.0-1') + 'G' : vm.ram + 'M' }}
-            </p>
-          </div>
-          <div class="rounded-lg p-2 text-center" style="background-color: var(--bg-elevated)">
-            <p class="text-xs mb-0.5" style="color: var(--text-muted)">Disco</p>
-            <p class="text-sm font-bold" style="color: var(--text-primary)">{{ vm.disk }}G</p>
-          </div>
-        </div>
-
-        <!-- Actions (Admin only) -->
+        <!-- Footer slot: Admin actions -->
         @if (auth.isAdmin()) {
-          <div class="flex items-center gap-1 pt-3 border-t" style="border-color: var(--border)">
-            <p-button [icon]="vm.status === 'Encendida' ? 'pi pi-pause' : 'pi pi-play'"
-                      [pTooltip]="vm.status === 'Encendida' ? 'Apagar' : 'Encender'"
-                      [text]="true" severity="secondary" size="small"
-                      (onClick)="cycleStatus(vm)" />
-            <a [routerLink]="['/vms', vm.id, 'edit']">
-              <p-button icon="pi pi-pencil" pTooltip="Editar"
-                        [text]="true" severity="secondary" size="small" />
-            </a>
-            <span class="flex-1"></span>
-            <p-button icon="pi pi-trash" pTooltip="Eliminar"
-                      [text]="true" severity="danger" size="small"
-                      (onClick)="deleteVm(vm)" />
-          </div>
+          <ng-template pTemplate="footer">
+            <div class="flex items-center gap-1 pt-1">
+              <p-button [icon]="vm.status === 'Encendida' ? 'pi pi-pause' : 'pi pi-play'"
+                        [pTooltip]="vm.status === 'Encendida' ? 'Apagar' : 'Encender'"
+                        [text]="true" severity="secondary" size="small"
+                        (onClick)="cycleStatus(vm)" />
+              <a [routerLink]="['/vms', vm.id, 'edit']">
+                <p-button icon="pi pi-pencil" pTooltip="Editar"
+                          [text]="true" severity="secondary" size="small" />
+              </a>
+              <span class="flex-1"></span>
+              <p-button icon="pi pi-trash" pTooltip="Eliminar"
+                        [text]="true" severity="danger" size="small"
+                        (onClick)="deleteVm($event, vm)" />
+            </div>
+          </ng-template>
         }
-      </div>
+
+      </p-card>
 
     }
   </div>

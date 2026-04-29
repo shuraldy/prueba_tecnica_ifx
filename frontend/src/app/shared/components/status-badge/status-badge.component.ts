@@ -27,7 +27,7 @@ export class StatusBadgeComponent {
   dotClass(): string {
     const map: Record<VmStatus, string> = {
       Encendida:  'bg-emerald-500 animate-pulse',
-      Apagada:    'bg-slate-400',
+      Apagada:    'bg-red-400',
       Suspendida: 'bg-amber-500',
     };
     return map[this.status()];

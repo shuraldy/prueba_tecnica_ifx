@@ -1,18 +1,19 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { ButtonModule } from 'primeng/button';
+import { SkeletonModule } from 'primeng/skeleton';
 import { VmService } from '../../../core/services/vm.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-vm-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputTextModule, InputNumberModule, SelectModule, ButtonModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputTextModule, InputNumberModule, SelectModule, ButtonModule, SkeletonModule],
   templateUrl: './vm-form.component.html',
 })
 export class VmFormComponent implements OnInit {
@@ -23,6 +24,7 @@ export class VmFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly loading = signal(false);
+  readonly loadingForm = signal(false);
   readonly isEdit = signal(false);
   private vmId: string | null = null;
 
@@ -43,15 +45,21 @@ export class VmFormComponent implements OnInit {
 
   ngOnInit() {
     this.vmId = this.route.snapshot.paramMap.get('id');
-    if (this.vmId) {
-      this.isEdit.set(true);
-      const vm = this.vmService.vms().find(v => v.id === this.vmId);
-      if (vm) {
-        this.form.patchValue(vm);
-      } else {
-        this.router.navigate(['/vms']);
+    this.loadingForm.set(true);
+
+    setTimeout(() => {
+      if (this.vmId) {
+        this.isEdit.set(true);
+        const vm = this.vmService.vms().find(v => v.id === this.vmId);
+        if (vm) {
+          this.form.patchValue(vm);
+        } else {
+          this.router.navigate(['/vms']);
+          return;
+        }
       }
-    }
+      this.loadingForm.set(false);
+    }, 1500);
   }
 
   submit() {

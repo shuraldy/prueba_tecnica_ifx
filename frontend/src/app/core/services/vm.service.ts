@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap, catchError } from 'rxjs/operators';
+import { tap, catchError, delay } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
 import { Vm, PaginatedVms, VmStats, VmsQuery, CreateVmPayload, UpdateVmPayload } from '../models/vm.model';
 import { environment } from '../../../environments/environment';
@@ -23,6 +23,7 @@ export class VmService {
     ) as Record<string, string>;
 
     return this.http.get<PaginatedVms>(this.apiUrl, { params }).pipe(
+      delay(1500),
       tap(res => {
         this.vms.set(res.data);
         this.pagination.set({ total: res.total, page: res.page, limit: res.limit, totalPages: res.totalPages });
@@ -34,6 +35,7 @@ export class VmService {
 
   loadStats(): Observable<VmStats> {
     return this.http.get<VmStats>(`${this.apiUrl}/stats`).pipe(
+      delay(1500),
       tap(s => this.stats.set(s))
     );
   }
@@ -101,5 +103,9 @@ export class VmService {
 
   applySocketDelete(id: string) {
     this.vms.update(list => list.filter(v => v.id !== id));
+  }
+
+  applySocketStats(stats: VmStats) {
+    this.stats.set(stats);
   }
 }

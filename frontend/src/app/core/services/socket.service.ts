@@ -1,8 +1,8 @@
-import { Injectable, OnDestroy, inject } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Vm } from '../models/vm.model';
+import { Vm, VmStats } from '../models/vm.model';
 
 @Injectable({ providedIn: 'root' })
 export class SocketService implements OnDestroy {
@@ -28,6 +28,10 @@ export class SocketService implements OnDestroy {
 
   onVmDeleted(): Observable<string> {
     return this.fromEvent<string>('vm:deleted');
+  }
+
+  onVmStats(): Observable<VmStats> {
+    return this.fromEvent<VmStats>('vm:stats');
   }
 
   private fromEvent<T>(event: string): Observable<T> {

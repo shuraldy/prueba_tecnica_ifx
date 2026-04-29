@@ -1,66 +1,156 @@
 <div class="flex h-screen overflow-hidden" style="background-color: var(--bg-base)">
 
+  <!-- Mobile backdrop -->
+  @if (sidebarOpen()) {
+    <div class="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm lg:hidden"
+         (click)="sidebarOpen.set(false)">
+    </div>
+  }
+
   <!-- Sidebar -->
-  <aside class="w-64 flex flex-col border-r transition-colors duration-200"
+  <aside class="sidebar fixed lg:static inset-y-0 left-0 z-30 flex flex-col border-r transition-all duration-300 ease-in-out lg:translate-x-0"
+         [class.-translate-x-full]="!sidebarOpen()"
+         [class.translate-x-0]="sidebarOpen()"
+         [class.w-64]="!sidebarCollapsed()"
+         [class.w-16]="sidebarCollapsed()"
          style="background-color: var(--sidebar-bg); border-color: var(--sidebar-border)">
 
-    <!-- Logo -->
-    <div class="flex items-center gap-3 px-6 py-5 border-b" style="border-color: var(--sidebar-border)">
-      <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
-           style="background-color: var(--brand)">
-        <i class="pi pi-server text-white text-sm"></i>
-      </div>
-      <span class="font-bold text-lg tracking-tight" style="color: var(--text-primary)">VM Manager</span>
+    <!-- Logo + hamburger -->
+    <div class="flex items-center border-b shrink-0"
+         [class.justify-between]="!sidebarCollapsed()"
+         [class.justify-center]="sidebarCollapsed()"
+         [class.px-4]="!sidebarCollapsed()"
+         [class.px-2]="sidebarCollapsed()"
+         style="height: 64px; border-color: var(--sidebar-border)">
+
+      @if (!sidebarCollapsed()) {
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shrink-0"
+               style="background-color: var(--brand)">
+            <i class="pi pi-server text-white text-sm"></i>
+          </div>
+          <span class="font-bold text-lg tracking-tight whitespace-nowrap" style="color: var(--text-primary)">VM Manager</span>
+        </div>
+      }
+
+      <!-- Desktop hamburger -->
+      <button class="hidden lg:flex p-2 rounded-lg transition-colors nav-link shrink-0"
+              (click)="toggleCollapsed()">
+        <i class="pi pi-bars text-base"></i>
+      </button>
+
+      <!-- Mobile close -->
+      <button class="lg:hidden p-1 rounded-lg transition-colors nav-link"
+              (click)="sidebarOpen.set(false)">
+        <i class="pi pi-times text-base"></i>
+      </button>
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-3 py-4 space-y-1">
+    <nav class="flex-1 py-4 overflow-hidden"
+         [class.px-3]="!sidebarCollapsed()"
+         [class.px-2]="sidebarCollapsed()">
+
       <a routerLink="/dashboard" routerLinkActive="nav-active"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200">
-        <i class="pi pi-chart-bar text-base"></i>
-        <span class="text-sm font-medium">Dashboard</span>
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200 mb-1"
+         [class.justify-start]="!sidebarCollapsed()"
+         [class.justify-center]="sidebarCollapsed()"
+         [pTooltip]="sidebarCollapsed() ? 'Dashboard' : ''"
+         tooltipPosition="right"
+         (click)="sidebarOpen.set(false)">
+        <i class="pi pi-chart-bar text-base shrink-0"></i>
+        @if (!sidebarCollapsed()) {
+          <span class="text-sm font-medium whitespace-nowrap">Dashboard</span>
+        }
       </a>
+
       <a routerLink="/vms" routerLinkActive="nav-active"
-         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200">
-        <i class="pi pi-desktop text-base"></i>
-        <span class="text-sm font-medium">Máquinas Virtuales</span>
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200"
+         [class.justify-start]="!sidebarCollapsed()"
+         [class.justify-center]="sidebarCollapsed()"
+         [pTooltip]="sidebarCollapsed() ? 'Máquinas Virtuales' : ''"
+         tooltipPosition="right"
+         (click)="sidebarOpen.set(false)">
+        <i class="pi pi-desktop text-base shrink-0"></i>
+        @if (!sidebarCollapsed()) {
+          <span class="text-sm font-medium whitespace-nowrap">Máquinas Virtuales</span>
+        }
       </a>
     </nav>
 
     <!-- Bottom actions -->
-    <div class="px-3 py-4 border-t space-y-2" style="border-color: var(--sidebar-border)">
+    <div class="py-4 border-t space-y-2 shrink-0"
+         [class.px-3]="!sidebarCollapsed()"
+         [class.px-2]="sidebarCollapsed()"
+         style="border-color: var(--sidebar-border)">
 
       <!-- Theme toggle -->
       <button (click)="theme.toggle()"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200 nav-link">
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200 nav-link"
+              [class.justify-start]="!sidebarCollapsed()"
+              [class.justify-center]="sidebarCollapsed()"
+              [pTooltip]="sidebarCollapsed() ? (theme.isDark() ? 'Modo claro' : 'Modo oscuro') : ''"
+              tooltipPosition="right">
         @if (theme.isDark()) {
-          <i class="pi pi-sun text-base text-amber-400"></i>
-          <span class="text-sm font-medium">Modo claro</span>
+          <i class="pi pi-sun text-base text-amber-400 shrink-0"></i>
+          @if (!sidebarCollapsed()) {
+            <span class="text-sm font-medium whitespace-nowrap">Modo claro</span>
+          }
         } @else {
-          <i class="pi pi-moon text-base text-indigo-400"></i>
-          <span class="text-sm font-medium">Modo oscuro</span>
+          <i class="pi pi-moon text-base text-indigo-400 shrink-0"></i>
+          @if (!sidebarCollapsed()) {
+            <span class="text-sm font-medium whitespace-nowrap">Modo oscuro</span>
+          }
         }
       </button>
 
       <!-- User info -->
-      <div class="flex items-center gap-3 px-3 py-2 rounded-lg"
-           style="background-color: var(--bg-elevated)">
-        <p-avatar [label]="userInitials" shape="circle" size="normal"
-                  [style]="{'background-color': 'var(--brand)', 'color': '#fff', 'font-weight': '700'}" />
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{ auth.currentUser()?.name }}</p>
-          <p class="text-xs truncate" style="color: var(--text-muted)">{{ auth.currentUser()?.role }}</p>
+      @if (!sidebarCollapsed()) {
+        <div class="flex items-center gap-3 px-3 py-2 rounded-lg"
+             style="background-color: var(--bg-elevated)">
+          <p-avatar [label]="userInitials" shape="circle" size="normal"
+                    [style]="{'background-color': 'var(--brand)', 'color': '#fff', 'font-weight': '700'}" />
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{ auth.currentUser()?.name }}</p>
+            <p class="text-xs truncate" style="color: var(--text-muted)">{{ auth.currentUser()?.role }}</p>
+          </div>
+          <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
+                    pTooltip="Cerrar sesión" tooltipPosition="right"
+                    (onClick)="logout()" />
         </div>
-        <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
-                  pTooltip="Cerrar sesión" tooltipPosition="right"
-                  (onClick)="logout()" />
-      </div>
+      } @else {
+        <div class="flex flex-col items-center gap-2">
+          <p-avatar [label]="userInitials" shape="circle" size="normal"
+                    pTooltip="{{ auth.currentUser()?.name }}" tooltipPosition="right"
+                    [style]="{'background-color': 'var(--brand)', 'color': '#fff', 'font-weight': '700'}" />
+          <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
+                    pTooltip="Cerrar sesión" tooltipPosition="right"
+                    (onClick)="logout()" />
+        </div>
+      }
     </div>
   </aside>
 
   <!-- Main content -->
-  <main class="flex-1 flex flex-col overflow-hidden">
-    <div class="flex-1 overflow-y-auto p-8">
+  <main class="flex-1 flex flex-col overflow-hidden min-w-0">
+
+    <!-- Mobile topbar -->
+    <header class="lg:hidden flex items-center gap-3 px-4 border-b"
+            style="height: 64px; background-color: var(--sidebar-bg); border-color: var(--sidebar-border)">
+      <button class="p-2 rounded-lg nav-link transition-colors"
+              (click)="toggleSidebar()">
+        <i class="pi pi-bars text-lg"></i>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md flex items-center justify-center"
+             style="background-color: var(--brand)">
+          <i class="pi pi-server text-white text-xs"></i>
+        </div>
+        <span class="font-bold text-base tracking-tight" style="color: var(--text-primary)">VM Manager</span>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-4 lg:p-8">
       <router-outlet />
     </div>
   </main>
