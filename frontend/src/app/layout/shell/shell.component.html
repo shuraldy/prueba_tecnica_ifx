@@ -33,8 +33,13 @@
       <!-- Theme toggle -->
       <button (click)="theme.toggle()"
               class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200 nav-link">
-        <i class="pi text-base" [class.pi-sun]="theme.isDark()" [class.pi-moon]="!theme.isDark()"></i>
-        <span class="text-sm font-medium">{{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}</span>
+        @if (theme.isDark()) {
+          <i class="pi pi-sun text-base text-amber-400"></i>
+          <span class="text-sm font-medium">Modo claro</span>
+        } @else {
+          <i class="pi pi-moon text-base text-indigo-400"></i>
+          <span class="text-sm font-medium">Modo oscuro</span>
+        }
       </button>
 
       <!-- User info -->
