@@ -1,0 +1,65 @@
+<div class="flex h-screen overflow-hidden" style="background-color: var(--bg-base)">
+
+  <!-- Sidebar -->
+  <aside class="w-64 flex flex-col border-r transition-colors duration-200"
+         style="background-color: var(--sidebar-bg); border-color: var(--sidebar-border)">
+
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-6 py-5 border-b" style="border-color: var(--sidebar-border)">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
+           style="background-color: var(--brand)">
+        <i class="pi pi-server text-white text-sm"></i>
+      </div>
+      <span class="font-bold text-lg tracking-tight" style="color: var(--text-primary)">VM Manager</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a routerLink="/dashboard" routerLinkActive="nav-active"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200">
+        <i class="pi pi-chart-bar text-base"></i>
+        <span class="text-sm font-medium">Dashboard</span>
+      </a>
+      <a routerLink="/vms" routerLinkActive="nav-active"
+         class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200">
+        <i class="pi pi-desktop text-base"></i>
+        <span class="text-sm font-medium">Máquinas Virtuales</span>
+      </a>
+    </nav>
+
+    <!-- Bottom actions -->
+    <div class="px-3 py-4 border-t space-y-2" style="border-color: var(--sidebar-border)">
+
+      <!-- Theme toggle -->
+      <button (click)="theme.toggle()"
+              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-transparent transition-all duration-200 nav-link">
+        <i class="pi text-base" [class.pi-sun]="theme.isDark()" [class.pi-moon]="!theme.isDark()"></i>
+        <span class="text-sm font-medium">{{ theme.isDark() ? 'Modo claro' : 'Modo oscuro' }}</span>
+      </button>
+
+      <!-- User info -->
+      <div class="flex items-center gap-3 px-3 py-2 rounded-lg"
+           style="background-color: var(--bg-elevated)">
+        <p-avatar [label]="userInitials" shape="circle" size="normal"
+                  [style]="{'background-color': 'var(--brand)', 'color': '#fff', 'font-weight': '700'}" />
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium truncate" style="color: var(--text-primary)">{{ auth.currentUser()?.name }}</p>
+          <p class="text-xs truncate" style="color: var(--text-muted)">{{ auth.currentUser()?.role }}</p>
+        </div>
+        <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
+                  pTooltip="Cerrar sesión" tooltipPosition="right"
+                  (onClick)="logout()" />
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 overflow-y-auto p-8">
+      <router-outlet />
+    </div>
+  </main>
+
+</div>
+
+<app-toast />

@@ -1,0 +1,128 @@
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold" style="color: var(--text-primary)">Máquinas Virtuales</h1>
+    <p class="text-sm mt-1" style="color: var(--text-secondary)">{{ vmService.pagination().total }} VMs en total</p>
+  </div>
+  @if (auth.isAdmin()) {
+    <a routerLink="/vms/new">
+      <p-button label="Nueva VM" icon="pi pi-plus" />
+    </a>
+  }
+</div>
+
+<!-- Filters -->
+<div class="flex flex-col sm:flex-row gap-3 mb-6">
+  <input pInputText [(ngModel)]="search" placeholder="Buscar por nombre u OS..."
+         class="flex-1 input-field rounded-lg px-3 py-2 border"
+         (keyup.enter)="applyFilters()" />
+  <p-select [(ngModel)]="statusFilter" [options]="statusOptions"
+            optionLabel="label" optionValue="value"
+            styleClass="w-48" (onChange)="applyFilters()" />
+  <p-button icon="pi pi-search" [outlined]="true" (onClick)="applyFilters()" />
+</div>
+
+<!-- Loading skeletons -->
+@if (vmService.loading()) {
+  <app-skeleton [count]="6" />
+}
+
+<!-- Empty state -->
+@else if (vmService.vms().length === 0) {
+  <div class="flex flex-col items-center justify-center py-24 text-center">
+    <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+         style="background-color: var(--bg-elevated)">
+      <i class="pi pi-desktop text-2xl" style="color: var(--text-muted)"></i>
+    </div>
+    <h3 class="font-semibold mb-1" style="color: var(--text-primary)">No hay VMs</h3>
+    <p class="text-sm mb-4" style="color: var(--text-secondary)">
+      {{ search || statusFilter ? 'Ninguna VM coincide con los filtros.' : 'Aún no hay máquinas virtuales creadas.' }}
+    </p>
+    @if (auth.isAdmin() && !search && !statusFilter) {
+      <a routerLink="/vms/new"><p-button label="Crear primera VM" icon="pi pi-plus" /></a>
+    }
+  </div>
+}
+
+<!-- VM Grid -->
+@else {
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+    @for (vm of vmService.vms(); track trackById($index, vm)) {
+
+      <div class="card card-hover rounded-xl p-5 transition-all duration-300 cursor-default"
+           [ngClass]="updatedVmId() === vm.id ? 'ring-2 ring-indigo-500/60 shadow-lg' : ''">
+
+        <!-- Card header -->
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                 style="background-color: var(--brand-subtle)">
+              <i class="pi pi-desktop text-xs" style="color: var(--brand-text)"></i>
+            </div>
+            <h3 class="font-semibold truncate text-sm" style="color: var(--text-primary)">{{ vm.name }}</h3>
+          </div>
+          <app-status-badge [status]="vm.status" />
+        </div>
+
+        <!-- OS -->
+        <p class="text-xs mb-4" style="color: var(--text-muted)">{{ vm.os }}</p>
+
+        <!-- Specs -->
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <div class="rounded-lg p-2 text-center" style="background-color: var(--bg-elevated)">
+            <p class="text-xs mb-0.5" style="color: var(--text-muted)">vCPU</p>
+            <p class="text-sm font-bold" style="color: var(--text-primary)">{{ vm.cores }}</p>
+          </div>
+          <div class="rounded-lg p-2 text-center" style="background-color: var(--bg-elevated)">
+            <p class="text-xs mb-0.5" style="color: var(--text-muted)">RAM</p>
+            <p class="text-sm font-bold" style="color: var(--text-primary)">
+              {{ vm.ram >= 1024 ? (vm.ram / 1024 | number:'1.0-1') + 'G' : vm.ram + 'M' }}
+            </p>
+          </div>
+          <div class="rounded-lg p-2 text-center" style="background-color: var(--bg-elevated)">
+            <p class="text-xs mb-0.5" style="color: var(--text-muted)">Disco</p>
+            <p class="text-sm font-bold" style="color: var(--text-primary)">{{ vm.disk }}G</p>
+          </div>
+        </div>
+
+        <!-- Actions (Admin only) -->
+        @if (auth.isAdmin()) {
+          <div class="flex items-center gap-1 pt-3 border-t" style="border-color: var(--border)">
+            <p-button [icon]="vm.status === 'Encendida' ? 'pi pi-pause' : 'pi pi-play'"
+                      [pTooltip]="vm.status === 'Encendida' ? 'Apagar' : 'Encender'"
+                      [text]="true" severity="secondary" size="small"
+                      (onClick)="cycleStatus(vm)" />
+            <a [routerLink]="['/vms', vm.id, 'edit']">
+              <p-button icon="pi pi-pencil" pTooltip="Editar"
+                        [text]="true" severity="secondary" size="small" />
+            </a>
+            <span class="flex-1"></span>
+            <p-button icon="pi pi-trash" pTooltip="Eliminar"
+                      [text]="true" severity="danger" size="small"
+                      (onClick)="deleteVm(vm)" />
+          </div>
+        }
+      </div>
+
+    }
+  </div>
+
+  <!-- Pagination -->
+  @if (vmService.pagination().totalPages > 1) {
+    <div class="flex items-center justify-center gap-2">
+      <p-button icon="pi pi-chevron-left" [text]="true" severity="secondary"
+                [disabled]="vmService.pagination().page === 1"
+                (onClick)="goToPage(vmService.pagination().page - 1)" />
+      @for (p of pages(); track p) {
+        <p-button [label]="p.toString()" [text]="true"
+                  [severity]="vmService.pagination().page === p ? 'primary' : 'secondary'"
+                  (onClick)="goToPage(p)" />
+      }
+      <p-button icon="pi pi-chevron-right" [text]="true" severity="secondary"
+                [disabled]="vmService.pagination().page === vmService.pagination().totalPages"
+                (onClick)="goToPage(vmService.pagination().page + 1)" />
+    </div>
+  }
+}
+
+<p-confirmDialog />

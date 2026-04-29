@@ -1,0 +1,93 @@
+<!-- Header -->
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <h1 class="text-2xl font-bold" style="color: var(--text-primary)">Dashboard</h1>
+    <p class="text-sm mt-1" style="color: var(--text-secondary)">Resumen de recursos y estado de las VMs</p>
+  </div>
+  @if (auth.isAdmin()) {
+    <a routerLink="/vms/new">
+      <p-button label="Nueva VM" icon="pi pi-plus" />
+    </a>
+  }
+</div>
+
+@if (vmService.stats(); as stats) {
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+    <div class="card rounded-xl p-5">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted)">Total VMs</p>
+      <p class="text-3xl font-bold" style="color: var(--text-primary)">{{ stats.totalVms }}</p>
+      <p class="text-xs mt-1" style="color: var(--text-muted)">máquinas registradas</p>
+    </div>
+
+    <div class="card rounded-xl p-5">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted)">vCPUs</p>
+      <p class="text-3xl font-bold" style="color: var(--brand)">{{ stats.totalCores }}</p>
+      <p class="text-xs mt-1" style="color: var(--text-muted)">cores asignados</p>
+    </div>
+
+    <div class="card rounded-xl p-5">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted)">RAM</p>
+      <p class="text-3xl font-bold" style="color: #8b5cf6">
+        {{ stats.totalRam / 1024 | number:'1.0-1' }}
+        <span class="text-base font-normal" style="color: var(--text-muted)">GB</span>
+      </p>
+      <p class="text-xs mt-1" style="color: var(--text-muted)">memoria asignada</p>
+    </div>
+
+    <div class="card rounded-xl p-5">
+      <p class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted)">Disco</p>
+      <p class="text-3xl font-bold" style="color: #ec4899">
+        {{ stats.totalDisk }}
+        <span class="text-base font-normal" style="color: var(--text-muted)">GB</span>
+      </p>
+      <p class="text-xs mt-1" style="color: var(--text-muted)">almacenamiento asignado</p>
+    </div>
+
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <div class="card rounded-xl p-6">
+      <h3 class="text-sm font-semibold mb-4" style="color: var(--text-secondary)">VMs por estado</h3>
+      <div class="flex items-center justify-center h-52">
+        <canvas #statusChart></canvas>
+      </div>
+      <div class="flex justify-center gap-6 mt-4 text-xs" style="color: var(--text-muted)">
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>Encendida ({{ stats.byStatus['Encendida'] }})
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>Apagada ({{ stats.byStatus['Apagada'] }})
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>Suspendida ({{ stats.byStatus['Suspendida'] }})
+        </span>
+      </div>
+    </div>
+
+    <div class="card rounded-xl p-6">
+      <h3 class="text-sm font-semibold mb-4" style="color: var(--text-secondary)">Recursos totales asignados</h3>
+      <div class="h-52">
+        <canvas #resourceChart></canvas>
+      </div>
+    </div>
+
+  </div>
+
+} @else {
+  <!-- Skeleton -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    @for (i of [1,2,3,4]; track i) {
+      <div class="card rounded-xl p-5 h-24 animate-pulse" style="background-color: var(--bg-muted)"></div>
+    }
+  </div>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    @for (i of [1,2]; track i) {
+      <div class="card rounded-xl p-6 h-72 animate-pulse" style="background-color: var(--bg-muted)"></div>
+    }
+  </div>
+}
