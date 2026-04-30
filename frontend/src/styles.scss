@@ -137,4 +137,36 @@
     border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent);
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
+
+  /* ─── Login page ──────────────────────────────────────────────── */
+  .login-grid-pattern {
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.5;
+  }
+
+  .login-submit-btn {
+    background-color: var(--brand);
+    color: #ffffff;
+    &:hover:not(:disabled) {
+      background-color: var(--brand-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--brand) 35%, transparent);
+    }
+    &:active:not(:disabled) { transform: translateY(0); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; }
+  }
+
+  .credential-card {
+    cursor: pointer;
+    &:hover {
+      border-color: var(--brand) !important;
+      background-color: color-mix(in srgb, var(--brand) 5%, var(--bg-elevated)) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--brand) 15%, transparent);
+    }
+    &:active { transform: translateY(0); }
+  }
 }
