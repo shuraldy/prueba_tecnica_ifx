@@ -1,4 +1,5 @@
 <!-- Header -->
+<div class="max-w-2xl mx-auto">
 <div class="flex items-center gap-4 mb-8">
   <a routerLink="/vms">
     <p-button icon="pi pi-arrow-left" [text]="true" severity="secondary" />
@@ -18,23 +19,19 @@
   </div>
 </div>
 
-<div class="max-w-2xl">
-  <div class="card rounded-xl p-8">
+<div class="card rounded-xl p-8">
 
-    <!-- Skeleton form -->
+    <!-- Skeleton -->
     @if (loadingForm()) {
       <div class="space-y-6">
-
         <div class="flex flex-col gap-2">
           <p-skeleton width="5rem" height="1rem" />
           <p-skeleton width="100%" height="2.5rem" borderRadius="0.5rem" />
         </div>
-
         <div class="flex flex-col gap-2">
           <p-skeleton width="8rem" height="1rem" />
           <p-skeleton width="100%" height="2.5rem" borderRadius="0.5rem" />
         </div>
-
         <div class="grid grid-cols-3 gap-4">
           @for (i of [1,2,3]; track i) {
             <div class="flex flex-col gap-2">
@@ -43,21 +40,18 @@
             </div>
           }
         </div>
-
         <div class="flex flex-col gap-2">
           <p-skeleton width="5rem" height="1rem" />
           <p-skeleton width="100%" height="2.5rem" borderRadius="0.5rem" />
         </div>
-
         <div class="flex items-center gap-3 pt-4 border-t" style="border-color: var(--border)">
           <p-skeleton width="8rem" height="2.5rem" borderRadius="0.5rem" />
           <p-skeleton width="6rem" height="2.5rem" borderRadius="0.5rem" />
         </div>
-
       </div>
     }
 
-    <!-- Real form -->
+    <!-- Form -->
     @else {
       <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-6">
 
@@ -70,57 +64,85 @@
                  class="w-full input-field rounded-lg px-3 py-2 border"
                  [class.!border-red-500]="err('name')" />
           @if (err('name')) { <span class="text-xs text-red-500">{{ errMsg('name') }}</span> }
-          <span class="text-xs" style="color: var(--text-muted)">
-            Solo letras, números, guiones y underscores (3-50 caracteres)
-          </span>
+          <span class="text-xs" style="color: var(--text-muted)">Solo letras, números, guiones y underscores (3-50 caracteres)</span>
         </div>
 
-        <!-- OS -->
+        <!-- OS autocomplete + add button -->
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium" style="color: var(--text-secondary)">
             Sistema Operativo <span class="text-red-500">*</span>
           </label>
-          <input pInputText formControlName="os" placeholder="Ubuntu 22.04"
-                 class="w-full input-field rounded-lg px-3 py-2 border"
-                 [class.!border-red-500]="err('os')" />
-          @if (err('os')) { <span class="text-xs text-red-500">{{ errMsg('os') }}</span> }
+          <div class="flex gap-2">
+            <p-autocomplete
+              [(ngModel)]="selectedOs"
+              [ngModelOptions]="{standalone: true}"
+              [suggestions]="osSuggestions"
+              (completeMethod)="searchOs($event)"
+              optionLabel="name"
+              placeholder="Buscar sistema operativo..."
+              styleClass="flex-1"
+              inputStyleClass="w-full input-field"
+              [dropdown]="true"
+              [forceSelection]="true"
+              appendTo="body" />
+            <p-button icon="pi pi-plus" [outlined]="true" severity="secondary"
+                      pTooltip="Crear nuevo OS" type="button"
+                      (onClick)="openOsDialog()" />
+          </div>
+          @if (!selectedOs && form.touched) {
+            <span class="text-xs text-red-500">Campo requerido</span>
+          }
         </div>
 
-        <!-- Resources -->
+        <!-- Resources: cores / ram / disk -->
         <div class="grid grid-cols-3 gap-4">
 
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium" style="color: var(--text-secondary)">
               vCPUs <span class="text-red-500">*</span>
             </label>
-            <p-inputnumber formControlName="cores" [min]="1" [max]="128" placeholder="4"
-                           inputStyleClass="w-full input-field"
-                           [class.!border-red-500]="err('cores')" />
+            <p-select formControlName="cores"
+                      [options]="resources.cores()"
+                      optionLabel="value" optionValue="value"
+                      placeholder="—"
+                      styleClass="w-full"
+                      [class.!border-red-500]="err('cores')" />
             @if (err('cores')) { <span class="text-xs text-red-500">{{ errMsg('cores') }}</span> }
           </div>
 
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium" style="color: var(--text-secondary)">
-              RAM (MB) <span class="text-red-500">*</span>
+              RAM <span class="text-red-500">*</span>
             </label>
-            <p-inputnumber formControlName="ram" [min]="512" [step]="512" placeholder="8192"
-                           inputStyleClass="w-full input-field"
-                           [class.!border-red-500]="err('ram')" />
+            <p-select formControlName="ram"
+                      [options]="resources.rams()"
+                      optionValue="value"
+                      placeholder="—"
+                      styleClass="w-full"
+                      [class.!border-red-500]="err('ram')">
+              <ng-template pTemplate="selectedItem" let-item>
+                {{ item.value >= 1024 ? (item.value / 1024 | number:'1.0-1') + ' GB' : item.value + ' MB' }}
+              </ng-template>
+              <ng-template pTemplate="item" let-item>
+                {{ item.value >= 1024 ? (item.value / 1024 | number:'1.0-1') + ' GB' : item.value + ' MB' }}
+              </ng-template>
+            </p-select>
             @if (err('ram')) { <span class="text-xs text-red-500">{{ errMsg('ram') }}</span> }
-            @if (form.get('ram')?.value && form.get('ram')!.value! >= 1024) {
-              <span class="text-xs" style="color: var(--text-muted)">
-                ≈ {{ form.get('ram')!.value! / 1024 | number:'1.0-1' }} GB
-              </span>
-            }
           </div>
 
           <div class="flex flex-col gap-1.5">
             <label class="text-sm font-medium" style="color: var(--text-secondary)">
-              Disco (GB) <span class="text-red-500">*</span>
+              Disco <span class="text-red-500">*</span>
             </label>
-            <p-inputnumber formControlName="disk" [min]="10" [step]="10" placeholder="100"
-                           inputStyleClass="w-full input-field"
-                           [class.!border-red-500]="err('disk')" />
+            <p-select formControlName="disk"
+                      [options]="resources.disks()"
+                      optionValue="value"
+                      placeholder="—"
+                      styleClass="w-full"
+                      [class.!border-red-500]="err('disk')">
+              <ng-template pTemplate="selectedItem" let-item>{{ item.value }} GB</ng-template>
+              <ng-template pTemplate="item" let-item>{{ item.value }} GB</ng-template>
+            </p-select>
             @if (err('disk')) { <span class="text-xs text-red-500">{{ errMsg('disk') }}</span> }
           </div>
 
@@ -142,7 +164,7 @@
                     [icon]="isEdit() ? 'pi pi-save' : 'pi pi-plus'"
                     [loading]="loading()" [disabled]="loading()" />
           <a routerLink="/vms">
-            <p-button label="Cancelar" [outlined]="true" severity="secondary" />
+            <p-button label="Cancelar" [outlined]="true" severity="secondary" type="button" />
           </a>
         </div>
 
@@ -150,4 +172,37 @@
     }
 
   </div>
-</div>
+</div> <!-- /max-w-2xl mx-auto -->
+
+<!-- New OS Dialog -->
+<p-dialog header="Nuevo Sistema Operativo"
+          [visible]="showOsDialog()"
+          (visibleChange)="showOsDialog.set($event)"
+          [modal]="true" [closable]="true"
+          styleClass="w-full max-w-md"
+          appendTo="body">
+
+  <div class="flex flex-col gap-4 pt-2">
+    <p class="text-sm" style="color: var(--text-secondary)">
+      Ingresa el nombre del sistema operativo que deseas agregar al catálogo.
+    </p>
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium" style="color: var(--text-secondary)">Nombre del OS</label>
+      <input pInputText
+             [ngModel]="newOsName()" (ngModelChange)="newOsName.set($event)"
+             placeholder="ej. Kali Linux 2024"
+             class="w-full input-field rounded-lg px-3 py-2 border"
+             (keyup.enter)="saveNewOs()" />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancelar" [outlined]="true" severity="secondary"
+                (onClick)="showOsDialog.set(false)" />
+      <p-button label="Crear OS" icon="pi pi-plus"
+                [loading]="savingOs()" [disabled]="!newOsName().trim() || savingOs()"
+                (onClick)="saveNewOs()" />
+    </div>
+  </ng-template>
+</p-dialog>

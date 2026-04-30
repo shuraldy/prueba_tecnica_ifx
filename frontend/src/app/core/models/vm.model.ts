@@ -45,3 +45,24 @@ export interface CreateVmPayload {
 }
 
 export type UpdateVmPayload = Partial<CreateVmPayload>;
+
+export interface VmCoreOption {
+  id: string;
+  value: number;
+}
+
+export interface VmRamOption {
+  id: string;
+  value: number;
+}
+
+export interface VmDiskOption {
+  id: string;
+  value: number;
+}
+
+export interface VmOsOption {
+  id: string;
+  name: string;
+  isCustom: boolean;
+}

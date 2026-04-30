@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Vm } from './domain/entities/vm.entity';
+import { VmTypeOrmEntity } from './infrastructure/entities/vm.typeorm.entity';
 import { VmRepository } from './domain/repositories/vm.repository.abstract';
 import { VmTypeOrmRepository } from './infrastructure/repositories/vm.typeorm.repository';
 import { ListVmsUseCase } from './application/use-cases/list-vms.use-case';
@@ -12,10 +12,15 @@ import { UpdateVmStatusUseCase } from './application/use-cases/update-vm-status.
 import { DeleteVmUseCase } from './application/use-cases/delete-vm.use-case';
 import { VmsController } from './infrastructure/controllers/vms.controller';
 import { VmsGateway } from './infrastructure/gateways/vms.gateway';
+import { VmResourcesModule } from '../vm-resources/vm-resources.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vm]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([VmTypeOrmEntity]),
+    VmResourcesModule,
+    AuthModule,
+  ],
   controllers: [VmsController],
   providers: [
     VmsGateway,

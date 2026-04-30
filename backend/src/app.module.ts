@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { VmsModule } from './vms/vms.module';
+import { VmResourcesModule } from './vm-resources/vm-resources.module';
 import { SeedModule } from './shared/seed/seed.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { SeedModule } from './shared/seed/seed.module';
       }),
     }),
     AuthModule,
+    VmResourcesModule,
     VmsModule,
     SeedModule,
   ],

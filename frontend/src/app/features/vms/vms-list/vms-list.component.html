@@ -105,18 +105,19 @@
         <!-- Footer slot: Admin actions -->
         @if (auth.isAdmin()) {
           <ng-template pTemplate="footer">
-            <div class="flex items-center gap-1 pt-1">
+            <div class="flex items-center gap-2 pt-1">
               <p-button [icon]="vm.status === 'Encendida' ? 'pi pi-pause' : 'pi pi-play'"
                         [pTooltip]="vm.status === 'Encendida' ? 'Apagar' : 'Encender'"
-                        [text]="true" severity="secondary" size="small"
-                        (onClick)="cycleStatus(vm)" />
+                        [text]="true" [rounded]="true"
+                        [severity]="vm.status === 'Encendida' ? 'warn' : 'success'"
+                        (onClick)="cycleStatus($event, vm)" />
               <a [routerLink]="['/vms', vm.id, 'edit']">
                 <p-button icon="pi pi-pencil" pTooltip="Editar"
-                          [text]="true" severity="secondary" size="small" />
+                          [text]="true" [rounded]="true" severity="info" />
               </a>
               <span class="flex-1"></span>
               <p-button icon="pi pi-trash" pTooltip="Eliminar"
-                        [text]="true" severity="danger" size="small"
+                        [text]="true" [rounded]="true" severity="danger"
                         (onClick)="deleteVm($event, vm)" />
             </div>
           </ng-template>
@@ -128,21 +129,10 @@
   </div>
 
   <!-- Pagination -->
-  @if (vmService.pagination().totalPages > 1) {
-    <div class="flex items-center justify-center gap-2">
-      <p-button icon="pi pi-chevron-left" [text]="true" severity="secondary"
-                [disabled]="vmService.pagination().page === 1"
-                (onClick)="goToPage(vmService.pagination().page - 1)" />
-      @for (p of pages(); track p) {
-        <p-button [label]="p.toString()" [text]="true"
-                  [severity]="vmService.pagination().page === p ? 'primary' : 'secondary'"
-                  (onClick)="goToPage(p)" />
-      }
-      <p-button icon="pi pi-chevron-right" [text]="true" severity="secondary"
-                [disabled]="vmService.pagination().page === vmService.pagination().totalPages"
-                (onClick)="goToPage(vmService.pagination().page + 1)" />
-    </div>
-  }
+  <app-paginator
+    [page]="vmService.pagination().page"
+    [rows]="vmService.pagination().limit"
+    [total]="vmService.pagination().total"
+    (pageChange)="goToPage($event.page, $event.limit)" />
 }
 
-<p-confirmDialog />

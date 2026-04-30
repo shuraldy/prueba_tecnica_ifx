@@ -10,7 +10,7 @@ export class VmService {
   private readonly http = inject(HttpClient);
 
   readonly vms = signal<Vm[]>([]);
-  readonly pagination = signal<Omit<PaginatedVms, 'data'>>({ total: 0, page: 1, limit: 10, totalPages: 0 });
+  readonly pagination = signal<Omit<PaginatedVms, 'data'>>({ total: 0, page: 1, limit: 6, totalPages: 0 });
   readonly stats = signal<VmStats | null>(null);
   readonly loading = signal(false);
 

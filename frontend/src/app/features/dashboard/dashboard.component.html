@@ -53,7 +53,7 @@
 
     <div class="card rounded-xl p-6">
       <h3 class="text-sm font-semibold mb-4" style="color: var(--text-secondary)">VMs por estado</h3>
-      <div class="flex items-center justify-center h-52">
+      <div class="relative mx-auto" style="width: 200px; height: 200px;">
         <canvas #statusChart></canvas>
       </div>
       <div class="flex justify-center gap-6 mt-4 text-xs" style="color: var(--text-muted)">
@@ -61,7 +61,7 @@
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>Encendida ({{ stats.byStatus['Encendida'] }})
         </span>
         <span class="flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full bg-slate-400"></span>Apagada ({{ stats.byStatus['Apagada'] }})
+          <span class="w-2 h-2 rounded-full bg-red-400"></span>Apagada ({{ stats.byStatus['Apagada'] }})
         </span>
         <span class="flex items-center gap-1.5">
           <span class="w-2 h-2 rounded-full bg-amber-500"></span>Suspendida ({{ stats.byStatus['Suspendida'] }})
@@ -71,7 +71,7 @@
 
     <div class="card rounded-xl p-6">
       <h3 class="text-sm font-semibold mb-4" style="color: var(--text-secondary)">Recursos totales asignados</h3>
-      <div class="h-52">
+      <div class="relative" style="height: 220px;">
         <canvas #resourceChart></canvas>
       </div>
     </div>

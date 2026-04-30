@@ -7,19 +7,19 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { VmService } from '../../../core/services/vm.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
 import { SkeletonComponent } from '../../../shared/components/skeleton/skeleton.component';
+import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
 import { Vm, VmStatus, VmsQuery } from '../../../core/models/vm.model';
 
 @Component({
   selector: 'app-vms-list',
   standalone: true,
-  imports: [CommonModule, NgClass, RouterLink, FormsModule, ButtonModule, CardModule, InputTextModule, SelectModule, TooltipModule, ConfirmDialog, StatusBadgeComponent, SkeletonComponent],
+  imports: [CommonModule, NgClass, RouterLink, FormsModule, ButtonModule, CardModule, InputTextModule, SelectModule, TooltipModule, StatusBadgeComponent, SkeletonComponent, PaginatorComponent],
   templateUrl: './vms-list.component.html',
 })
 export class VmsListComponent implements OnInit {
@@ -40,6 +40,7 @@ export class VmsListComponent implements OnInit {
   ];
 
   ngOnInit() {
+    this.vmService.pagination.update(p => ({ ...p, page: 1, limit: 6 }));
     this.load();
   }
 
@@ -58,24 +59,32 @@ export class VmsListComponent implements OnInit {
     this.load();
   }
 
-  goToPage(page: number) {
-    this.vmService.pagination.update(p => ({ ...p, page }));
+  goToPage(page: number, limit?: number) {
+    this.vmService.pagination.update(p => ({ ...p, page, ...(limit ? { limit } : {}) }));
     this.load();
   }
 
-  pages(): number[] {
-    return Array.from({ length: this.vmService.pagination().totalPages }, (_, i) => i + 1);
-  }
-
-  cycleStatus(vm: Vm) {
+  cycleStatus(event: Event, vm: Vm) {
     if (!this.auth.isAdmin()) return;
     const next: Record<VmStatus, VmStatus> = { Encendida: 'Apagada', Apagada: 'Encendida', Suspendida: 'Encendida' };
-    this.vmService.updateStatus(vm.id, next[vm.status]).subscribe({
-      next: updated => {
-        this.highlightVm(updated.id);
-        this.toast.success('Estado actualizado', `${updated.name} → ${updated.status}`);
+    const action = next[vm.status];
+    const isOn   = action === 'Encendida';
+    this.confirm.confirm({
+      target: event.target as EventTarget,
+      message: `¿${isOn ? 'Encender' : 'Apagar'} la VM "${vm.name}"?`,
+      header: isOn ? 'Encender VM' : 'Apagar VM',
+      icon: isOn ? 'pi pi-play' : 'pi pi-pause',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: isOn ? 'Encender' : 'Apagar', severity: isOn ? 'success' : 'warn' },
+      accept: () => {
+        this.vmService.updateStatus(vm.id, action).subscribe({
+          next: updated => {
+            this.highlightVm(updated.id);
+            this.toast.success('Estado actualizado', `${updated.name} → ${updated.status}`);
+          },
+          error: () => this.toast.error('Error', 'No se pudo actualizar el estado'),
+        });
       },
-      error: () => this.toast.error('Error', 'No se pudo actualizar el estado'),
     });
   }
 

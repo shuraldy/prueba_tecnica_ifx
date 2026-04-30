@@ -116,7 +116,7 @@
           </div>
           <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
                     pTooltip="Cerrar sesión" tooltipPosition="right"
-                    (onClick)="logout()" />
+                    (onClick)="logout($event)" />
         </div>
       } @else {
         <div class="flex flex-col items-center gap-2">
@@ -125,7 +125,7 @@
                     [style]="{'background-color': 'var(--brand)', 'color': '#fff', 'font-weight': '700'}" />
           <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" size="small"
                     pTooltip="Cerrar sesión" tooltipPosition="right"
-                    (onClick)="logout()" />
+                    (onClick)="logout($event)" />
         </div>
       }
     </div>
@@ -157,4 +157,4 @@
 
 </div>
 
-<app-toast />
+<p-confirmdialog />

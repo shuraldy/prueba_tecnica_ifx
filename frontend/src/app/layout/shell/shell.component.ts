@@ -1,20 +1,20 @@
 import { Component, inject, OnInit, OnDestroy, signal, HostListener } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { AvatarModule } from 'primeng/avatar';
 import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 import { AuthService } from '../../core/services/auth.service';
 import { SocketService } from '../../core/services/socket.service';
 import { VmService } from '../../core/services/vm.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ThemeService } from '../../core/services/theme.service';
-import { ToastComponent } from '../../shared/components/toast/toast.component';
-
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, ButtonModule, AvatarModule, TooltipModule, ToastComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, ButtonModule, AvatarModule, TooltipModule, ConfirmDialog],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
@@ -24,6 +24,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly socket = inject(SocketService);
   private readonly vmService = inject(VmService);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmationService);
 
   readonly sidebarOpen = signal(false);
   readonly sidebarCollapsed = signal(false);
@@ -78,8 +80,21 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.socket.disconnect();
   }
 
-  logout() {
-    this.auth.logout().subscribe();
+  logout(event: Event) {
+    this.confirm.confirm({
+      target: event.target as EventTarget,
+      message: '¿Estás seguro de que deseas cerrar sesión?',
+      header: 'Cerrar sesión',
+      icon: 'pi pi-sign-out',
+      rejectButtonProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+      acceptButtonProps: { label: 'Cerrar sesión', severity: 'danger' },
+      accept: () => this.auth.logout().subscribe({
+        next: () => {
+          this.toast.success('Sesión cerrada', 'Has cerrado sesión correctamente');
+          this.router.navigate(['/login']);
+        },
+      }),
+    });
   }
 
   get userInitials(): string {
