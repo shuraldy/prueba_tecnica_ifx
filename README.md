@@ -1,6 +1,6 @@
 # VM Manager — Prueba Técnica IFX
 
-Aplicación full-stack para gestión de máquinas virtuales (VMs) con dashboard interactivo, autenticación segura basada en cookies HttpOnly, actualizaciones en tiempo real vía WebSockets y control de acceso por roles.
+Aplicación full-stack para gestión de máquinas virtuales con dashboard interactivo, autenticación segura basada en cookies HttpOnly, actualizaciones en tiempo real vía WebSockets y control de acceso por roles.
 
 ---
 
@@ -17,13 +17,13 @@ Aplicación full-stack para gestión de máquinas virtuales (VMs) con dashboard 
 
 ## Stack Tecnológico
 
-| Capa       | Tecnología                                      |
-|------------|-------------------------------------------------|
-| Frontend   | Angular 17+, TailwindCSS, Chart.js / Recharts   |
-| Backend    | NestJS 11, TypeScript, TypeORM, SQLite          |
-| Auth       | JWT en cookie HttpOnly · Passport.js            |
-| Real-time  | Socket.IO 4 (WebSocket Gateway en NestJS)       |
-| Validación | class-validator · class-transformer             |
+| Capa       | Tecnología                                           |
+|------------|------------------------------------------------------|
+| Frontend   | Angular 19, TailwindCSS, PrimeNG 19, Chart.js        |
+| Backend    | NestJS 11, TypeScript, TypeORM, SQLite               |
+| Auth       | JWT en cookie HttpOnly · Passport.js                 |
+| Real-time  | Socket.IO 4 (WebSocket Gateway en NestJS)            |
+| Validación | class-validator · class-transformer                  |
 
 ---
 
@@ -53,24 +53,21 @@ cd backend
 npm install
 ```
 
-Crear el archivo de variables de entorno (ya incluido en el repo para desarrollo local):
+Crear el archivo de variables de entorno a partir del ejemplo:
 
 ```bash
-# backend/.env
-PORT=3000
-JWT_SECRET=8a0vueXaHGWNtJMK78JzJHu64zSqzuSdRHQLSoDPqDn
-JWT_EXPIRATION=1d
-DB_PATH=./database.sqlite
-CORS_ORIGIN=http://localhost:4200
+cp .env.example .env
 ```
 
-Iniciar en modo desarrollo (el seed de base de datos corre automáticamente al arrancar):
+Editar `.env` con los valores correspondientes (ver `.env.example` para referencia). El campo `JWT_SECRET` debe ser un string aleatorio seguro.
+
+Iniciar en modo desarrollo (el seed corre automáticamente al arrancar):
 
 ```bash
 npm run start:dev
 ```
 
-El servidor quedará disponible en `http://localhost:3000`. La base de datos SQLite (`database.sqlite`) se crea y sincroniza automáticamente. Los datos de prueba (usuarios y VMs) se insertan en el primer arranque vía `SeedService`.
+El servidor quedará disponible en `http://localhost:3000`. La base de datos SQLite (`database.sqlite`) se crea y sincroniza automáticamente. Los datos de prueba se insertan en el primer arranque vía `SeedService`.
 
 ---
 
@@ -79,6 +76,17 @@ El servidor quedará disponible en `http://localhost:3000`. La base de datos SQL
 ```bash
 cd ../frontend
 npm install
+```
+
+Crear el archivo de entorno a partir del ejemplo:
+
+```bash
+cp src/environments/environment.ts.example src/environments/environment.ts
+```
+
+Iniciar el servidor de desarrollo:
+
+```bash
 ng serve
 ```
 
@@ -89,8 +97,8 @@ La SPA quedará disponible en `http://localhost:4200`.
 ### 4. Verificar que todo funciona
 
 1. Abrir `http://localhost:4200` → redirige al Login.
-2. Iniciar sesión con cualquiera de las credenciales de prueba (ver sección siguiente).
-3. El Dashboard carga la lista de VMs y los gráficos de recursos.
+2. Iniciar sesión usando el autofill de credenciales en la pantalla de login.
+3. El Dashboard carga estadísticas y gráficos de recursos en tiempo real.
 
 ---
 
@@ -98,23 +106,15 @@ La SPA quedará disponible en `http://localhost:4200`.
 
 Insertadas automáticamente por el `SeedService` al arrancar el backend por primera vez.
 
-| Rol            | Email                 | Contraseña   |
-|----------------|-----------------------|--------------|
-| Administrador  | admin@ifx.com         | Admin123!    |
-| Cliente        | cliente@ifx.com       | Cliente123!  |
+> Las credenciales están disponibles directamente en la pantalla de login mediante tarjetas de autofill — haz clic en "Admin" o "Cliente" para completar el formulario automáticamente.
+
+| Rol            | Email                 |
+|----------------|-----------------------|
+| Administrador  | admin@ifx.com         |
+| Cliente        | cliente@ifx.com       |
 
 > **Administrador**: acceso total — crear, editar, eliminar VMs y ver el dashboard completo.  
-> **Cliente**: solo lectura — los botones de acción no se renderizan en la UI.
-
-### VMs precargadas
-
-| Nombre          | SO        | Estado      |
-|-----------------|-----------|-------------|
-| web-server      | Ubuntu    | Encendida   |
-| db-server       | Debian    | Encendida   |
-| cache-server    | Alpine    | Apagada     |
-| worker-node     | CentOS    | Suspendida  |
-| monitoring      | Ubuntu    | Encendida   |
+> **Cliente**: solo lectura — los controles de acción no se renderizan en la UI. Recibe notificaciones en tiempo real cuando un administrador modifica el estado de una VM.
 
 ---
 
@@ -126,8 +126,8 @@ Insertadas automáticamente por el `SeedService` al arrancar el backend por prim
 │                                                              │
 │   ┌───────────────┐        ┌──────────────────────────────┐ │
 │   │  Angular SPA  │◄──────►│  Socket.IO Client            │ │
-│   │  (port 4200)  │        │  (escucha vm:created,        │ │
-│   └──────┬────────┘        │   vm:updated, vm:deleted)    │ │
+│   │  (port 4200)  │        │  (vm:created, vm:updated,    │ │
+│   └──────┬────────┘        │   vm:deleted, vm:stats)      │ │
 │          │ HTTP + Cookie   └──────────────┬───────────────┘ │
 └──────────┼──────────────────────────────┼─────────────────┘
            │                              │ WebSocket (ws://)
@@ -138,30 +138,35 @@ Insertadas automáticamente por el `SeedService` al arrancar el backend por prim
 │  ┌─────────────────────────────────────────────────────┐    │
 │  │                  HTTP REST API                       │    │
 │  │                                                      │    │
-│  │  POST /auth/login  →  AuthController                 │    │
-│  │  POST /auth/logout →  AuthController                 │    │
-│  │  GET  /auth/me     →  AuthController [JWT Guard]     │    │
+│  │  POST /auth/login       →  AuthController            │    │
+│  │  POST /auth/logout      →  AuthController            │    │
+│  │  GET  /auth/me          →  AuthController [JWT]      │    │
 │  │                                                      │    │
-│  │  GET    /vms       →  VmsController  [JWT + Roles]   │    │
-│  │  POST   /vms       →  VmsController  [Admin only]    │    │
-│  │  PUT    /vms/:id   →  VmsController  [Admin only]    │    │
-│  │  DELETE /vms/:id   →  VmsController  [Admin only]    │    │
+│  │  GET    /vms            →  VmsController  [JWT+Rol]  │    │
+│  │  POST   /vms            →  VmsController  [Admin]    │    │
+│  │  PUT    /vms/:id        →  VmsController  [Admin]    │    │
+│  │  PATCH  /vms/:id/status →  VmsController  [Admin]    │    │
+│  │  DELETE /vms/:id        →  VmsController  [Admin]    │    │
+│  │  GET    /vms/stats      →  VmsController  [JWT]      │    │
+│  │                                                      │    │
+│  │  GET  /vm-resources/cores|ram|disk|os  [JWT]         │    │
+│  │  POST /vm-resources/os                [Admin]        │    │
 │  └────────────────────────┬────────────────────────────┘    │
 │                           │                                  │
 │  ┌────────────────────────▼────────────────────────────┐    │
 │  │              Clean Architecture Layers               │    │
-│  │                                                      │    │
 │  │  Infrastructure → Application (Use Cases) → Domain  │    │
 │  └────────────────────────┬────────────────────────────┘    │
 │                           │                                  │
 │  ┌────────────────────────▼────────────────────────────┐    │
 │  │              Socket.IO Gateway (VmsGateway)          │    │
-│  │  Emite eventos en tiempo real tras cada mutación     │    │
-│  │  vm:created · vm:updated · vm:deleted                │    │
+│  │  Emite eventos tras cada mutación:                   │    │
+│  │  vm:created · vm:updated · vm:deleted · vm:stats     │    │
 │  └────────────────────────┬────────────────────────────┘    │
 │                           │                                  │
 │  ┌────────────────────────▼────────────────────────────┐    │
-│  │            TypeORM + SQLite (database.sqlite)        │    │
+│  │       TypeORM + SQLite — Tablas de lookup FK         │    │
+│  │  vm_cores · vm_ram · vm_disk · vm_os · vms · users  │    │
 │  └──────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -182,6 +187,22 @@ Browser                          Backend
    │◄─ 200 [ ...vms ] ────────────│── RolesGuard valida rol
 ```
 
+### Flujo de tiempo real (WebSockets)
+
+```
+Admin Browser                    Backend                   Client Browser
+      │                             │                             │
+      │── PUT /vms/:id/status ────►│                             │
+      │                             │── updateStatus use case    │
+      │◄─ 200 OK ─────────────────│                             │
+      │   toast propio             │── emitVmUpdated()           │
+      │                             │── emitVmStats()             │
+      │                             │──── ws: vm:updated ───────►│
+      │                             │──── ws: vm:stats ─────────►│
+      │                             │                  toast notif│
+      │                             │             dashboard live  │
+```
+
 ---
 
 ## Decisiones Arquitectónicas
@@ -190,21 +211,19 @@ Browser                          Backend
 
 NestJS provee estructura modular y soporte nativo para Dependency Injection, Guards, Pipes y WebSocket Gateways — todo lo que la prueba requería sin necesidad de librerías adicionales. Su ecosistema TypeScript-first elimina errores en tiempo de ejecución y mejora la mantenibilidad.
 
-### ¿Por qué Angular?
+### ¿Por qué Angular 19?
 
-Angular es opinionado por diseño: módulos, servicios, guards e interceptores son ciudadanos de primera clase del framework. Eso permite implementar Optimistic UI con `HttpInterceptor`, proteger rutas con `AuthGuard` y gestionar estado global con servicios reactivos + RxJS sin depender de librerías externas de estado.
+Angular es opinionado por diseño: guards, interceptores y servicios son ciudadanos de primera clase del framework. La API de señales (`signal`, `effect`) de Angular 19 permite estado reactivo fino sin RxJS en la capa de UI, mientras que los guards async con `Observable` gestionan el flujo de autenticación de forma declarativa.
 
-### ¿Por qué SQLite?
+### ¿Por qué SQLite con tablas de lookup?
 
-Para una prueba técnica local, SQLite elimina la fricción de setup sin sacrificar las capacidades de TypeORM. El cambio a PostgreSQL o MySQL en producción requiere únicamente cambiar el driver y las variables de entorno — la capa de repositorios abstractos lo absorbe sin modificar el código de dominio.
+Para una prueba técnica local, SQLite elimina la fricción de setup. Las tablas de lookup (`vm_cores`, `vm_ram`, `vm_disk`, `vm_os`) con FK garantizan integridad referencial y valores controlados. El cambio a PostgreSQL requiere únicamente cambiar el driver — la capa de repositorios abstractos lo absorbe sin modificar el código de dominio.
 
 ### ¿Por qué Cookie HttpOnly en lugar de localStorage?
 
-El enunciado lo requería explícitamente por seguridad. Las cookies `HttpOnly` no son accesibles desde JavaScript, eliminando el vector de ataque XSS más común. El flag `SameSite=Strict` mitiga CSRF. El frontend nunca toca el token directamente — lo gestiona el navegador de forma transparente.
+Las cookies `HttpOnly` no son accesibles desde JavaScript, eliminando el vector de ataque XSS más común. El flag `SameSite=Strict` mitiga CSRF. El frontend nunca toca el token directamente — lo gestiona el navegador de forma transparente. El guard de Angular llama a `GET /auth/me` al refrescar la página para restaurar la sesión sin exponer el token.
 
 ### Estructura de carpetas (Clean Architecture)
-
-Cada módulo (`auth`, `vms`) sigue tres capas con dependencias unidireccionales:
 
 ```
 src/
@@ -223,24 +242,24 @@ src/
         └── gateways/
 ```
 
-Esta separación garantiza que el núcleo de negocio (`domain` + `application`) sea independiente del framework y testeable de forma aislada.
-
 ### Estructura del Frontend (Angular)
 
 ```
 src/app/
-├── core/               # Servicios singleton, interceptores, guards
-│   ├── auth/
-│   ├── interceptors/   # HTTP interceptor (Optimistic UI, manejo de errores)
-│   └── socket/         # Socket.IO service
-├── features/           # Módulos por ruta (lazy loading)
-│   ├── auth/           # Login page
-│   ├── dashboard/      # Panel principal + gráficos
-│   └── vms/            # Listado, creación y edición de VMs
-├── shared/             # Componentes reutilizables
-│   ├── components/     # Skeletons, toasts, empty states, confirm modal
+├── core/               # Servicios singleton, interceptores, guards, modelos
+│   ├── guards/         # authGuard / publicGuard (async, cookie-aware)
+│   ├── interceptors/   # credentialsInterceptor
+│   └── services/       # AuthService, VmService, VmResourcesService,
+│                       # SocketService, ToastService, ThemeService
+├── features/
+│   ├── auth/           # Login (split-screen, autofill)
+│   ├── dashboard/      # Estadísticas + gráficos Chart.js (doughnut + bar)
+│   └── vms/            # Listado paginado, formulario create/edit
+├── shared/
+│   ├── components/     # StatusBadge, Skeleton, Paginator, Toast
 │   └── pipes/
-└── layout/             # Shell principal (navbar, sidebar)
+└── layout/
+    └── shell/          # Sidebar colapsable, navbar, socket subscriptions
 ```
 
 ---
@@ -256,30 +275,41 @@ src/app/
 
 ### ¿Para qué se delegó el trabajo pesado?
 
-| Tarea                                      | Delegado a IA | Intervención manual                                      |
-|--------------------------------------------|:-------------:|----------------------------------------------------------|
-| Scaffolding del módulo `auth` (Clean Arch) | ✓             | Ajuste del `JwtStrategy` para leer la cookie en lugar del header Authorization |
-| CRUD de VMs (use cases + controller)       | ✓             | Revisión de reglas de validación de DTOs y mensajes de error |
-| Configuración de Socket.IO Gateway         | ✓             | Integración con los controllers para emitir eventos post-mutación |
-| Seed Service con datos de prueba           | ✓             | —                                                        |
-| Arquitectura de carpetas del frontend      | Parcial       | Decisión final de no usar NgRx y optar por servicios RxJS propios |
-| Optimistic UI (interceptor Angular)        | Parcial       | Lógica de rollback en caso de error del servidor         |
-| Diseño del dashboard (Dark Mode)           | —             | Diseño propio con TailwindCSS                            |
+| Tarea                                              | Delegado a IA | Intervención manual                                                          |
+|----------------------------------------------------|:-------------:|------------------------------------------------------------------------------|
+| Scaffolding del módulo `auth` (Clean Arch)         | ✓             | Ajuste del `JwtStrategy` para leer cookie en lugar del header Authorization  |
+| CRUD de VMs (use cases + controller)               | ✓             | Revisión de reglas de validación de DTOs y mensajes de error                 |
+| Tablas de lookup FK (cores, ram, disk, os)         | ✓             | Decisión de valores semilla y rango (base 2 para cores y ram)                |
+| Configuración de Socket.IO Gateway                 | ✓             | Integración con controllers para emitir `vm:stats` post-mutación             |
+| Seed Service con datos de prueba                   | ✓             | —                                                                            |
+| Optimistic UI (rollback en error)                  | Parcial       | Lógica de snapshot + rollback en `VmService`                                 |
+| Diseño del login (split-screen)                    | Parcial       | Decisión del layout, paleta y funcionalidad de autofill                      |
+| Dashboard (gráficos, dark mode)                    | Parcial       | Escala logarítmica para el bar chart, sincronización con señales de Angular  |
+| Auth guard async (fix refresh → login)             | ✓             | —                                                                            |
+| Notificaciones WebSocket para rol Cliente          | ✓             | Decisión de separar toasts por rol (admin vs cliente)                        |
 
 ---
 
 ### Prompts clave
 
-**1. Configuración de WebSockets con emisión post-mutación:**
+**1. WebSockets con emisión post-mutación y propagación de stats:**
 
-> "En NestJS tengo un `VmsGateway` con Socket.IO y un `VmsController`. Necesito que cada vez que el controller ejecute `createVm`, `updateVm` o `deleteVm`, el gateway emita un evento `vm:created`, `vm:updated` o `vm:deleted` respectivamente con el payload de la VM afectada. El gateway debe ser inyectado en el controller sin crear dependencias circulares. Dame la implementación completa con el módulo actualizado."
+> "En NestJS tengo un `VmsGateway` con Socket.IO y un `VmsController`. Necesito que cada vez que el controller ejecute `createVm`, `updateVm`, `updateStatus` o `deleteVm`, el gateway emita el evento correspondiente más un evento `vm:stats` actualizado. El gateway debe inyectarse en el controller sin crear dependencias circulares."
 
-*Por qué fue clave:* la inyección circular entre Gateway y Controller es un antipatrón común. El prompt forzó al modelo a pensar en la dirección de dependencias y producir una solución limpia.
+*Por qué fue clave:* la inyección circular entre Gateway y Controller es un antipatrón común. El prompt forzó al modelo a pensar en la dirección de dependencias y producir una solución limpia, y extendió el contrato para incluir las estadísticas en tiempo real.
 
 ---
 
-**2. Optimistic UI con rollback en Angular:**
+**2. Tablas de lookup con FK en TypeORM + resolución en repositorio:**
 
-> "Tengo un `VmService` en Angular que llama a `PUT /vms/:id`. Quiero implementar Optimistic UI: antes de hacer el request HTTP, actualizo inmediatamente el estado local del listado de VMs en un `BehaviorSubject`. Si el request falla con cualquier status >= 400, revierto el estado al snapshot anterior y muestro un toast de error. Si tiene éxito, sincronizo con la respuesta del servidor. Dame el método `updateVm()` completo con este comportamiento."
+> "Quiero crear tablas separadas `vm_cores`, `vm_ram`, `vm_disk`, `vm_os` con FK hacia la tabla `vms`. El API debe seguir recibiendo y devolviendo valores escalares (`cores: 4`, `os: 'Ubuntu'`). La resolución de FK debe ocurrir en el repositorio, transparente para los casos de uso."
 
-*Por qué fue clave:* el manejo del snapshot + rollback requiere timing preciso con RxJS (`tap`, `catchError`). El prompt especificó exactamente el contrato esperado, evitando que la IA produjera una solución genérica sin manejo de errores.
+*Por qué fue clave:* mantener el contrato del API inalterado mientras se introduce integridad referencial requirió un mapper `toDomain()` y un resolver `resolveRefs()` bien definidos en la capa de infraestructura.
+
+---
+
+**3. Auth guard async para evitar redirect en refresh:**
+
+> "Al refrescar la página, el `authGuard` redirige al login porque `currentUser()` es null. El token vive en una cookie HttpOnly. ¿Cómo hago que el guard llame a `GET /auth/me` antes de decidir si redirige?"
+
+*Por qué fue clave:* el guard necesitaba retornar un `Observable<boolean | UrlTree>` en lugar de un booleano síncrono — un cambio pequeño con un impacto grande en la UX.
